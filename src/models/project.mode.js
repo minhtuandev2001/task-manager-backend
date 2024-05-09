@@ -1,26 +1,30 @@
 const mongoose = require("mongoose");
 
 const projectSchema = mongoose.Schema({
-  title: { type: String, require: true },
+  title: { type: String },
   star: { type: Number, default: 0 },
   status: { type: String, default: "going" },
   date: {
-    timeStart: { type: String, require: true },
-    timeEnd: { type: String, require: true },
+    timeStart: { type: String },
+    timeEnd: { type: String },
   },
-  description: { type: String },
+  description: { type: String, default: "" },
   client: [{
-    id: { type: String, require: true },
-    email: { type: String, require: true }
+    id: { type: String },
+    email: { type: String }
   }],
   leader: [{
-    id: { type: String, require: true },
-    email: { type: String, require: true }
+    id: { type: String },
+    email: { type: String }
   }],
   member: [{
-    id: { type: String, require: true },
-    email: { type: String, require: true }
+    id: { type: String },
+    email: { type: String }
   }],
+  keyProject: { type: String },
+  createdBy: {
+    user_id: { type: String }
+  }
 }, {
   timestaps: true
 })
