@@ -66,7 +66,31 @@ const login = async (req, res) => {
   }
 }
 
+// [GET] /user?keyword={keyword}
+const getUser = async (req, res) => {
+  const keyword = req.query.keyword;
+  let users = []
+  try {
+    if (keyword) {
+      const regex = new RegExp(keyword, "i")
+      users = await User.find({
+        $or: [
+          { username: regex },
+          { email: regex }
+        ]
+      }).limit(5)
+    }
+    res.status(200).json({
+      data: users
+    })
+  } catch (error) {
+    res.status(500).json({
+      messages: "Server error"
+    })
+  }
+}
 module.exports = {
   register,
-  login
+  login,
+  getUser
 }
