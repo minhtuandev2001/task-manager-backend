@@ -24,7 +24,8 @@ const projectSchema = mongoose.Schema({
   keyProject: { type: String },
   createdBy: {
     user_id: { type: String }
-  }
+  },
+  deleted: { type: Boolean, default: false }
 }, {
   timestaps: true
 })

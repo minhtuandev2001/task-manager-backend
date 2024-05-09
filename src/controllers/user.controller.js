@@ -2,7 +2,7 @@ const md5 = require("md5");
 const generateToken = require("../config/generateToken");
 const User = require("../models/user.model")
 
-// [POST] /user/register 
+// [POST] /user/register
 const register = async (req, res) => {
   try {
     const emailExist = await User.findOne({ email: req.body.email });
@@ -23,7 +23,13 @@ const register = async (req, res) => {
     await user.save();
     res.status(200).json({
       messages: "Register success",
-      data: generateToken(user.id)
+      data: {
+        id: user.id,
+        name: user.username,
+        avatar: user.avatar,
+        email: user.email,
+        token: generateToken(user.id)
+      }
     })
   } catch (error) {
     console.log("check ", error)
