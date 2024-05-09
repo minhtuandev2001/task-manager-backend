@@ -51,7 +51,13 @@ const login = async (req, res) => {
     }
     res.status(200).json({
       messages: "Login success",
-      data: generateToken(userExist.id)
+      data: {
+        id: userExist.id,
+        name: userExist.username,
+        avatar: userExist.avatar,
+        email: userExist.email,
+        token: generateToken(userExist.id)
+      }
     })
   } catch (error) {
     res.status(500).json({
