@@ -1,7 +1,8 @@
 
 // [POST] /project/create
 
-const Project = require("../models/project.mode")
+const Project = require("../models/project.mode");
+const checkIsObjectId = require("../utiliti/checkId.JS");
 
 const create = async (req, res) => {
   try {
@@ -38,7 +39,7 @@ const getProject = async (req, res) => {
           ]
         }
       ]
-    }).sort({ createdAt: "desc" });
+    }).sort({ star: "desc", createdAt: "desc", });
     res.status(200).json({
       data: projects,
       length: projects.length
@@ -54,7 +55,21 @@ const getProject = async (req, res) => {
 // [POST] /project/update/:id
 const update = async (req, res) => {
   const { id } = req.user // lấy từ middleware auth
+  console.log("check ", req.params.id)
   try {
+    if (!checkIsObjectId(req.params.id)) {
+      res.status(400).json({
+        messages: "Id project error"
+      })
+      return
+    }
+    const checkProject = await Project.findOne({ _id: req.params.id })
+    if (!checkProject) {
+      res.status(404).json({
+        messages: "Project not found"
+      })
+      return
+    }
     // check quyền update cho createdBy, leader
     const project = await Project.findOne({
       $and: [
@@ -78,8 +93,47 @@ const update = async (req, res) => {
       messages: 'Project update success',
     })
   } catch (error) {
+    console.log("check ", error)
     res.status(500).json({
       messages: "Update project failed"
+    })
+  }
+}
+
+// [PATCH] /project/change-star/:id
+const changeStarProject = async (req, res) => {
+  const { id } = req.user;
+  try {
+    if (!checkIsObjectId(req.params.id)) {
+      res.status(400).json({
+        messages: "Id project error"
+      })
+      return
+    }
+    const checkUserHasPermissionInProject = await Project.findOne({
+      $and: [
+        { _id: req.params.id },
+        {
+          $or: [
+            { "createdBy.user_id": id },
+            { leader: { $elemMatch: { id: id } } }
+          ]
+        }
+      ]
+    })
+    if (!checkUserHasPermissionInProject) {
+      res.status(401).json({
+        messages: "Only leaders and creators can edit"
+      })
+      return
+    }
+    await Project.updateOne({ _id: req.params.id }, req.body)
+    res.status(200).json({
+      messages: "Star project success"
+    })
+  } catch (error) {
+    res.status(500).json({
+      messages: "Change star project failed"
     })
   }
 }
@@ -87,5 +141,6 @@ const update = async (req, res) => {
 module.exports = {
   create,
   getProject,
-  update
+  update,
+  changeStarProject
 }
