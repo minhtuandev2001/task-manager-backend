@@ -8,7 +8,8 @@ const create = async (req, res) => {
     const project = new Project(req.body);
     await project.save();
     res.status(200).json({
-      messages: "Create project success"
+      messages: "Create project success",
+      data: project
     })
   } catch (error) {
     console.log("check ", error)
@@ -33,10 +34,11 @@ const getProject = async (req, res) => {
             { client: { $elemMatch: { id: id } } },
             { leader: { $elemMatch: { id: id } } },
             { member: { $elemMatch: { id: id } } },
+            { "createdBy.user_id": id },
           ]
         }
       ]
-    });
+    }).sort({ createdAt: "desc" });
     res.status(200).json({
       data: projects,
       length: projects.length
@@ -50,13 +52,30 @@ const getProject = async (req, res) => {
 }
 
 // [POST] /project/update/:id
-
 const update = async (req, res) => {
+  const { id } = req.user // lấy từ middleware auth
   try {
-    const project = await Project.updateOne({ _id: req.params.id }, req.body);
+    // check quyền update cho createdBy, leader
+    const project = await Project.findOne({
+      $and: [
+        { _id: req.params.id },
+        {
+          $or: [
+            { "createdBy.user_id": id },
+            { leader: { $elemMatch: { id: id } } }
+          ]
+        }
+      ]
+    })
+    if (!project) {
+      res.status(401).json({
+        messages: "Only leaders and creators can edit"
+      })
+      return
+    }
+    await Project.updateOne({ _id: req.params.id }, req.body);
     res.status(200).json({
       messages: 'Project update success',
-      data: project,
     })
   } catch (error) {
     res.status(500).json({

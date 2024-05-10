@@ -27,7 +27,7 @@ const projectSchema = mongoose.Schema({
   },
   deleted: { type: Boolean, default: false }
 }, {
-  timestaps: true
+  timestamps: true
 })
 
 const Project = mongoose.model("Project", projectSchema)
