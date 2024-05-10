@@ -49,7 +49,24 @@ const getProject = async (req, res) => {
   }
 }
 
+// [POST] /project/update/:id
+
+const update = async (req, res) => {
+  try {
+    const project = await Project.updateOne({ _id: req.params.id }, req.body);
+    res.status(200).json({
+      messages: 'Project update success',
+      data: project,
+    })
+  } catch (error) {
+    res.status(500).json({
+      messages: "Update project failed"
+    })
+  }
+}
+
 module.exports = {
   create,
-  getProject
+  getProject,
+  update
 }
