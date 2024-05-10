@@ -176,10 +176,57 @@ const doneProject = async (req, res) => {
   }
 }
 
-// [GET] /project/detail:id
+// [GET] /project/detail/:id
 const detailProject = async (req, res) => {
   const { id } = req.user // trả về từ việc xác thực authMiddleware
   try {
+    const Existproject = await Project.findOne({ _id: req.params.id, deleted: false });
+    if (!Existproject) {
+      res.status(404).json({
+        messages: "Project not found"
+      })
+      return
+    }
+    const project = await Project.findOne({
+      $and: [
+        { _id: req.params.id },
+        { deleted: false },
+        {
+          $or: [
+            { "createdBy.user_id": id },
+            { leader: { $elemMatch: { id: id } } },
+          ]
+        }
+      ]
+    });
+    if (!project) {
+      res.status(401).json({
+        messages: "You do not have access"
+      })
+      return
+    }
+    res.status(200).json({
+      data: project,
+    })
+  } catch (error) {
+    console.log("check ", error)
+    res.status(500).json({
+      messages: "get detail project failed"
+    })
+  }
+}
+
+// [PATCH] /project/delete/:id
+const deleteProject = async (req, res) => {
+  const { id } = req.user // trả về từ việc xác thực authMiddleware
+  try {
+    const Existproject = await Project.findOne({ _id: req.params.id, deleted: false });
+    if (!Existproject) {
+      res.status(404).json({
+        messages: "Project not found"
+      })
+      return
+    }
     const project = await Project.findOne({
       $and: [
         { _id: req.params.id },
@@ -196,17 +243,20 @@ const detailProject = async (req, res) => {
     });
     if (!project) {
       res.status(401).json({
-        messages: "Only leaders and creators can see"
+        messages: "Only leaders and creators can"
       })
       return
     }
+    await Project.updateOne({ _id: req.params.id }, {
+      deleted: true
+    })
     res.status(200).json({
-      data: project,
+      messages: "Delete project success"
     })
   } catch (error) {
     console.log("check ", error)
     res.status(500).json({
-      messages: "Create project failed"
+      messages: "delete project failed"
     })
   }
 }
@@ -216,5 +266,6 @@ module.exports = {
   update,
   changeStarProject,
   doneProject,
-  detailProject
+  detailProject,
+  deleteProject
 }
