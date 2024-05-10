@@ -136,11 +136,85 @@ const changeStarProject = async (req, res) => {
       messages: "Change star project failed"
     })
   }
+
+}
+// [PATCH] /project/done-project/:id
+const doneProject = async (req, res) => {
+  const { id } = req.user;
+  try {
+    if (!checkIsObjectId(req.params.id)) {
+      res.status(400).json({
+        messages: "Id project error"
+      })
+      return
+    }
+    const checkUserHasPermissionInProject = await Project.findOne({
+      $and: [
+        { _id: req.params.id },
+        {
+          $or: [
+            { "createdBy.user_id": id },
+            { leader: { $elemMatch: { id: id } } }
+          ]
+        }
+      ]
+    })
+    if (!checkUserHasPermissionInProject) {
+      res.status(401).json({
+        messages: "Only leaders and creators can edit"
+      })
+      return
+    }
+    await Project.updateOne({ _id: req.params.id }, req.body)
+    res.status(200).json({
+      messages: "Done project success"
+    })
+  } catch (error) {
+    res.status(500).json({
+      messages: "Done project failed"
+    })
+  }
 }
 
+// [GET] /project/detail:id
+const detailProject = async (req, res) => {
+  const { id } = req.user // trả về từ việc xác thực authMiddleware
+  try {
+    const project = await Project.findOne({
+      $and: [
+        { _id: req.params.id },
+        { deleted: false },
+        {
+          $or: [
+            { "createdBy.user_id": id },
+            { client: { $elemMatch: { id: id } } },
+            { leader: { $elemMatch: { id: id } } },
+            { member: { $elemMatch: { id: id } } }
+          ]
+        }
+      ]
+    });
+    if (!project) {
+      res.status(401).json({
+        messages: "Only leaders and creators can see"
+      })
+      return
+    }
+    res.status(200).json({
+      data: project,
+    })
+  } catch (error) {
+    console.log("check ", error)
+    res.status(500).json({
+      messages: "Create project failed"
+    })
+  }
+}
 module.exports = {
   create,
   getProject,
   update,
-  changeStarProject
+  changeStarProject,
+  doneProject,
+  detailProject
 }
