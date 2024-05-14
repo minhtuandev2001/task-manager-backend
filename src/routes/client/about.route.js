@@ -27,7 +27,7 @@ router.get("/uploadMul",
     })
   })
 router.get("/uploadDrive",
-  uploadFile.array("file", 5),
+  uploadFile.array("files", 5),
   uploadDriveMiddleware.uploadDriver,
   (req, res) => {
     res.status(200).json({

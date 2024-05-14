@@ -57,6 +57,7 @@ const uploadFile = async (fileObject) => {
       link_view: getUrl.webViewLink,
     }
   } catch (error) {
+    console.log("check ", error)
     throw new Error(error)
   }
 }

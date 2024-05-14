@@ -260,6 +260,30 @@ const deleteProject = async (req, res) => {
     })
   }
 }
+
+// [GET] /project/idProject?keyword=search
+const getUserInProject = async (req, res) => {
+  try {
+    const { keyword } = req.query
+    const projectExits = await Project.findOne({ _id: req.params.id, deleted: false })
+    if (!projectExits) {
+      res.status(404).json({
+        messages: "Project not found",
+      })
+      return;
+    }
+    let user = projectExits.member.filter((item) => { if (item.email.includes(keyword)) return item })
+
+    res.status(200).json({
+      data: user
+    })
+  } catch (error) {
+    console.log("check ", error)
+    res.status(500).json({
+      messages: "Get user in project error"
+    })
+  }
+}
 module.exports = {
   create,
   getProject,
@@ -267,5 +291,6 @@ module.exports = {
   changeStarProject,
   doneProject,
   detailProject,
-  deleteProject
+  deleteProject,
+  getUserInProject
 }

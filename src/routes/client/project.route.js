@@ -10,6 +10,7 @@ router.patch('/change-star/:id', projectController.changeStarProject)
 router.patch('/done-project/:id', projectController.doneProject)
 router.get('/detail/:id', projectController.detailProject)
 router.delete('/delete/:id', projectController.deleteProject)
+router.get('/:id', projectController.getUserInProject)
 
 
 module.exports = router
