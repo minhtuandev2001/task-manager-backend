@@ -272,7 +272,17 @@ const getUserInProject = async (req, res) => {
       })
       return;
     }
-    let user = projectExits.member.filter((item) => { if (item.email.includes(keyword)) return item })
+    let combinedArray = projectExits.member.concat(projectExits.client, projectExits.leader);
+    // Sử dụng Map để loại bỏ các phần tử trùng lặp dựa trên id
+    let uniqueMap = new Map();
+    combinedArray.forEach(item => {
+      if (!uniqueMap.has(item.id)) {
+        uniqueMap.set(item.id, item);
+      }
+    });
+    // Chuyển đổi Map trở lại thành mảng các đối tượng
+    let uniqueArray = Array.from(uniqueMap.values());
+    let user = uniqueArray.filter((item) => { if (item.email.includes(keyword)) return item })
 
     res.status(200).json({
       data: user

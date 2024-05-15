@@ -1,5 +1,20 @@
 const mongoose = require("mongoose");
 
+const clientSchema = new mongoose.Schema({
+  id: String,
+  email: String
+}, { _id: false });
+
+const leaderSchema = new mongoose.Schema({
+  id: String,
+  email: String
+}, { _id: false });
+
+const memberSchema = new mongoose.Schema({
+  id: String,
+  email: String
+}, { _id: false });
+
 const projectSchema = mongoose.Schema({
   title: { type: String },
   star: { type: Number, default: 0 },
@@ -9,18 +24,9 @@ const projectSchema = mongoose.Schema({
     timeEnd: { type: String },
   },
   description: { type: String, default: "" },
-  client: [{
-    id: { type: String },
-    email: { type: String }
-  }],
-  leader: [{
-    id: { type: String },
-    email: { type: String }
-  }],
-  member: [{
-    id: { type: String },
-    email: { type: String }
-  }],
+  client: [clientSchema],
+  leader: [leaderSchema],
+  member: [memberSchema],
   keyProject: { type: String },
   createdBy: {
     user_id: { type: String }

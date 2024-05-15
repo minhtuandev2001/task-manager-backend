@@ -22,4 +22,5 @@ router.post("/create",
   }, uploadDriverMiddleware.uploadDriver,
   taskController.create)
 
+router.get("/", taskController.getTask)
 module.exports = router

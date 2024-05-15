@@ -1,9 +1,19 @@
 const mongoose = require("mongoose");
 
+const memberSchema = new mongoose.Schema({
+  id: String,
+  email: String
+}, { _id: false });
+const taskItemSchema = new mongoose.Schema({
+  id: String,
+  content: String,
+  checked: Boolean
+}, { _id: false });
+
 const taskSchema = mongoose.Schema({
   title: String,
-  status: String,
-  severity: String,
+  status: { type: String, default: "going" },
+  severity: { type: String, default: "low" },
   project_id: String,
   date: {
     timeStart: String,
@@ -14,15 +24,8 @@ const taskSchema = mongoose.Schema({
     timeEnd: String,
   },
   description: String,
-  member: [{
-    id: String,
-    email: String
-  }],
-  taskList: [{
-    id: String,
-    content: String,
-    checked: Boolean
-  }],
+  member: [memberSchema],
+  taskList: [taskItemSchema],
   images: Array,
   files: Array,
   createdBy: {

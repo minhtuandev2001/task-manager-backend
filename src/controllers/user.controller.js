@@ -90,6 +90,7 @@ const getUser = async (req, res) => {
       data: users
     })
   } catch (error) {
+    console.log("check ", error)
     res.status(500).json({
       messages: "Server error"
     })
