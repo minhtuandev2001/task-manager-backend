@@ -25,7 +25,7 @@ router.post("/create",
   taskController.create)
 
 router.get("/", taskController.getTasks)
-router.get("/detail/:id", taskController.getTask)
+router.get("/detail/:id", taskController.taskDetail)
 
 router.patch("/update/:id",
   uploadFile.fields([

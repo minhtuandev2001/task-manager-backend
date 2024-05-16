@@ -112,7 +112,7 @@ const getTasks = async (req, res) => {
           { status: regexStatus },
           { title: regexSearch },
         ]
-      }).lean()
+      }).sort({ star: "desc", createdAt: "desc", }).lean()
       for (const task of tasks) {
         const infoProject = await Project.findOne({ _id: task.project_id, deleted: false });
         task.infoProject = infoProject
@@ -193,7 +193,7 @@ const update = async (req, res) => {
 }
 
 // [GET] /task/:id
-const getTask = async (req, res) => {
+const taskDetail = async (req, res) => {
   try {
     const { id } = req.user; // trả về từ middleware xác thực
     const existTask = await Task.findOne({ _id: req.params.id, deleted: false })
@@ -308,7 +308,7 @@ const changeStar = async (req, res) => {
 module.exports = {
   create,
   getTasks,
-  getTask,
+  taskDetail,
   update,
   deleteTask,
   changeStar
