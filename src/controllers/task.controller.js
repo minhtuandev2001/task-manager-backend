@@ -58,19 +58,19 @@ const create = async (req, res) => {
   }
 }
 
-// [GET] /task
-const getTask = async (req, res) => {
+// [GET] /tasks
+const getTasks = async (req, res) => {
   const { id } = req.user;
-  const { statusAction, idProjects } = req.query;
+  const { statusAction, idProject } = req.query;
   try {
     let tasks = [];
     let projects = [];
-    let projectSelected = null;
+    let projectCurrent = null;
     // lấy ra thông tin của project đang được chọn hiện tại
-    if (idProjects) {
-      projectSelected = await Project.findOne({
+    if (idProject) {
+      projectCurrent = await Project.findOne({
         $and: [
-          { _id: idProjects },
+          { _id: idProject },
           { deleted: false },
           {
             $or: [
@@ -96,15 +96,12 @@ const getTask = async (req, res) => {
         }
       ]
     })
-    // console.log("check ", idProjects)
-    // console.log("check ", projects)
-    // console.log("check ", projects[0].id)
     if (projects.length > 0) {
       const regexStatus = new RegExp(statusAction, 'i')
       tasks = await Task.find({
         $and: [
           { deleted: false },
-          { project_id: idProjects || projects[0].id },
+          { project_id: idProject || projects[0].id },
           {
             $or: [
               { member: { $elemMatch: { id: id } } },
@@ -123,10 +120,115 @@ const getTask = async (req, res) => {
       tasks: tasks,
       length: tasks.length,
       projects: projects,
-      ProjectSelected: idProjects ? projectSelected : projects[0] || null
+      projectCurrent: idProject ? projectCurrent : projects[0] || null
     })
   } catch (err) {
-    console.log("check ", err)
+    res.status(500).json({
+      messages: "Get task failed"
+    })
+  }
+}
+
+// [PATCH] /task/update
+const update = async (req, res) => {
+  try {
+    const { id } = req.user; // trả về từ middleware xác thực
+    const existTask = await Task.findOne({ _id: req.params.id, deleted: false })
+    if (!existTask) {
+      res.status(404).json({
+        messages: "Task not found"
+      })
+      return
+    }
+    const permissionUpdate = await Task.findOne({
+      _id: req.params.id,
+      deleted: false,
+      "createdBy.user_id": id
+    })
+    if (!permissionUpdate) {
+      res.status(401).json({
+        messages: "Only leaders can update"
+      })
+      return
+    }
+    let task = {
+      title: req.body.title,
+      status: req.body.status,
+      severity: req.body.severity,
+      project_id: req.body.project_id,
+      date: {
+        timeStart: JSON.parse(req.body.date).timeStart,
+        timeEnd: JSON.parse(req.body.date).timeEnd,
+      },
+      time: {
+        timeStart: JSON.parse(req.body.time).timeStart,
+        timeEnd: JSON.parse(req.body.time).timeEnd,
+      },
+      description: req.body.description,
+      member: JSON.parse(req.body.member),
+      taskList: JSON.parse(req.body.taskList),
+      images: req.body.images ?
+        (JSON.parse(req.body.imagesOld) ? JSON.parse(req.body.imagesOld) : []).concat(req.body.images)
+        : (JSON.parse(req.body.imagesOld) ? JSON.parse(req.body.imagesOld) : []),
+      files: req.body.fileDrive ?
+        (JSON.parse(req.body.filesOld) ? JSON.parse(req.body.filesOld) : []).concat(req.body.fileDrive)
+        : (JSON.parse(req.body.filesOld) ? JSON.parse(req.body.filesOld) : []),
+      createdBy: {
+        user_id: id
+      },
+    }
+    const newTask = await Task.updateOne({ _id: req.params.id }, task)
+    res.status(200).json({
+      messages: "Update task success",
+      data: newTask
+    })
+  } catch (error) {
+    console.log("check ", error)
+    res.status(500).json({
+      messages: "Update task failed"
+    })
+  }
+}
+
+// [GET] /task/:id
+const getTask = async (req, res) => {
+  try {
+    const { id } = req.user; // trả về từ middleware xác thực
+    const existTask = await Task.findOne({ _id: req.params.id, deleted: false })
+    if (!existTask) {
+      res.status(404).json({
+        messages: "Task not found"
+      })
+      return
+    }
+    let task = await Task.findOne({
+      $and: [
+        { _id: req.params.id },
+        {
+          deleted: false,
+        },
+        {
+          $or: [
+            { "createdBy.user_id": id },
+            { member: { $elemMatch: { id: id } } },
+          ]
+        }
+      ]
+    }).lean()
+    if (!task) {
+      res.status(401).json({
+        messages: "Only members and leaders have the right to view"
+      })
+      return
+    }
+    // lấy thông tin project của task
+    const infoProject = await Project.findOne({ _id: task.project_id });
+    task.infoProject = infoProject
+
+    res.status(200).json({
+      data: task
+    })
+  } catch (error) {
     res.status(500).json({
       messages: "Get task failed"
     })
@@ -134,5 +236,7 @@ const getTask = async (req, res) => {
 }
 module.exports = {
   create,
-  getTask
+  getTasks,
+  getTask,
+  update
 }
