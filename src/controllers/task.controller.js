@@ -270,10 +270,46 @@ const deleteTask = async (req, res) => {
     })
   }
 }
+
+// [PATCH] /task/change-star/:id
+const changeStar = async (req, res) => {
+  try {
+    const existTask = await Task.findOne({ _id: req.params.id, deleted: false })
+    if (!existTask) {
+      res.status(404).json({
+        messages: "Task not found"
+      })
+      return
+    }
+    const permission = await Task.findOne({
+      $and: [
+        { _id: req.params.id },
+        { deleted: false },
+        { "createdBy.user_id": req.user.id }
+      ]
+    })
+    if (!permission) {
+      res.status(401).json({
+        messages: "Only the leader can edit"
+      })
+      return
+    }
+    await Task.updateOne({ _id: req.params.id, deleted: false }, req.body)
+    res.status(200).json({
+      messages: "Change star task success"
+    })
+  } catch (error) {
+    res.status(500).json({
+      messages: "Task change star failed"
+    })
+  }
+}
+
 module.exports = {
   create,
   getTasks,
   getTask,
   update,
-  deleteTask
+  deleteTask,
+  changeStar
 }

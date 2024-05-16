@@ -45,4 +45,6 @@ router.patch("/update/:id",
   taskController.update)
 
 router.delete("/delete/:id", taskController.deleteTask)
+router.patch("/change-star/:id", taskController.changeStar)
+
 module.exports = router
