@@ -43,4 +43,6 @@ router.patch("/update/:id",
   }, uploadDriverMiddleware.uploadDriver,
   taskValidation.create,
   taskController.update)
+
+router.delete("/delete/:id", taskController.deleteTask)
 module.exports = router

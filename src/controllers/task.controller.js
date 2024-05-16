@@ -61,7 +61,7 @@ const create = async (req, res) => {
 // [GET] /tasks
 const getTasks = async (req, res) => {
   const { id } = req.user;
-  const { statusAction, idProject } = req.query;
+  const { statusAction, idProject, keyword } = req.query;
   try {
     let tasks = [];
     let projects = [];
@@ -98,6 +98,7 @@ const getTasks = async (req, res) => {
     })
     if (projects.length > 0) {
       const regexStatus = new RegExp(statusAction, 'i')
+      const regexSearch = new RegExp(keyword, 'i')
       tasks = await Task.find({
         $and: [
           { deleted: false },
@@ -109,6 +110,7 @@ const getTasks = async (req, res) => {
             ]
           },
           { status: regexStatus },
+          { title: regexSearch },
         ]
       }).lean()
       for (const task of tasks) {
@@ -234,9 +236,44 @@ const getTask = async (req, res) => {
     })
   }
 }
+
+// [DELETE] /task/:id
+const deleteTask = async (req, res) => {
+  try {
+    const existTask = await Task.findOne({ _id: req.params.id, deleted: false })
+    if (!existTask) {
+      res.status(404).json({
+        messages: "Task not found"
+      })
+      return
+    }
+    const permission = await Task.findOne({
+      $and: [
+        { _id: req.params.id },
+        { deleted: false },
+        { "createdBy.user_id": req.user.id }
+      ]
+    })
+    if (!permission) {
+      res.status(401).json({
+        messages: "Only the leader can edit"
+      })
+      return
+    }
+    await Task.updateOne({ _id: req.params.id }, { deleted: true })
+    res.status(200).json({
+      messages: "Delete task success"
+    })
+  } catch (error) {
+    res.status(500).json({
+      messages: "Delete task failed"
+    })
+  }
+}
 module.exports = {
   create,
   getTasks,
   getTask,
-  update
+  update,
+  deleteTask
 }
