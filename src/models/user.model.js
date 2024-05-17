@@ -1,10 +1,23 @@
 const mongoose = require("mongoose");
 
 const userSchema = mongoose.Schema({
-  username: { type: String },
+  username: String,
   avatar: { type: String, default: "https://imgs.search.brave.com/y6QHHONCysvl1MYmkoGLFPAgGiPsfY-jdtben0wIZWA/rs:fit:860:0:0/g:ce/aHR0cHM6Ly9zZWN1/cmUuZ3JhdmF0YXIu/Y29tL2F2YXRhci8x/NjVkMTg0ODdlM2Fh/MjE0MzM1ZjFjYjIy/ZDBlMzkxMz9zPTYw/MCZkPW1tJnI9Zw" },
-  email: { type: String },
-  password: { type: String }
+  email: String,
+  password: String,
+  phone: String,
+  status: {
+    type: String,
+    default: "active"
+  },
+  acceptFriends: Array,
+  requestFriends: Array,
+  friendsList: [{
+    user_id: String,
+    room_chat_id: String
+  }],
+  statusOnline: String,
+  deleted: { type: Boolean, default: false }
 }, {
   timestamps: true
 })

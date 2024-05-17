@@ -74,18 +74,16 @@ const login = async (req, res) => {
 
 // [GET] /user?keyword={keyword}
 const getUser = async (req, res) => {
-  const keyword = req.query.keyword;
+  const { keyword, limit } = req.query;
   let users = []
   try {
-    if (keyword) {
-      const regex = new RegExp(keyword, "i")
-      users = await User.find({
-        $or: [
-          { username: regex },
-          { email: regex }
-        ]
-      }).limit(5)
-    }
+    const regex = new RegExp(keyword, "i")
+    users = await User.find({
+      $or: [
+        { username: regex },
+        { email: regex }
+      ]
+    }).limit(limit || 5).select("-password")
     res.status(200).json({
       data: users
     })

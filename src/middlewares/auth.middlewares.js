@@ -8,7 +8,14 @@ const protect = async (req, res, next) => {
       // decode 
       const decode = jwt.verify(token, process.env.JWT_SECRET);
 
-      req.user = await User.findOne({ _id: decode.id });
+      let user = await User.findOne({ _id: decode.id, status: "active" }).select("-password");
+      if (!user) {
+        res.status(404).json({
+          messages: "User not found"
+        })
+        return
+      }
+      req.user = user
       next();
     } catch (error) {
       res.status(403).json({
