@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require("uuid");
 const User = require("../models/user.model");
+const Notification = require("../models/notification.model");
 
 // [GET] /users?keyword={keyword}
 const getUser = async (req, res) => {
@@ -117,6 +118,17 @@ const requestAddFriend = async (req, res) => {
     await User.updateOne({ _id: req.params.id }, {
       $addToSet: { acceptFriends: id }
     })
+    // tạo thông báo 
+    let noti = {
+      user_id_send: id,
+      user_id_receiver: req.params.id,
+      content: "has sent you a friend request",
+    }
+    const notification = new Notification(noti)
+    await notification.save();
+    // gửi data realTime 
+    noti.infoUser = req.user
+    _io.in(req.params.id).emit("CLIENT_ADD_FRIEND", noti)
     res.status(200).json({
       messages: "Sent friend request successfully"
     })
@@ -203,7 +215,7 @@ const acceptFriend = async (req, res) => {
       })
       return
     }
-    const userExist = await User.findOne({ _id: req.params.id, deleted: false })
+    const userExist = await User.findOne({ _id: req.params.id, deleted: false }).select("-password")
     if (!userExist) {
       res.status(404).json({
         messages: "User not found"
@@ -237,6 +249,16 @@ const acceptFriend = async (req, res) => {
         }
       }
     })
+    // tạo thông báo 
+    let noti = {
+      user_id_send: id,
+      user_id_receiver: req.params.id,
+      content: "has accepted your friend request",
+    }
+    const notification = new Notification(noti)
+    await notification.save();
+    noti.infoUser = req.user
+    _io.in(req.params.id).emit("CLIENT_ACCEPT_FRIEND", noti)
     res.status(200).json({
       messages: "Make friends successfully"
     })

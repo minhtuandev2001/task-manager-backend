@@ -3,6 +3,7 @@ const aboutRoutes = require("./about.route")
 const projectRoutes = require("./project.route")
 const taskRoutes = require("./task.route")
 const usersRoutes = require("./users.route")
+const notificationRoutes = require("./notification.route")
 
 const authMiddleware = require("../../middlewares/auth.middlewares")
 
@@ -12,4 +13,5 @@ module.exports = (app) => {
   app.use("/about", authMiddleware.protect, aboutRoutes);
   app.use("/project", authMiddleware.protect, projectRoutes);
   app.use("/task", authMiddleware.protect, taskRoutes);
+  app.use("/notification", authMiddleware.protect, notificationRoutes);
 }
