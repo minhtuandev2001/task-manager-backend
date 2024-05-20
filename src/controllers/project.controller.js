@@ -1,13 +1,37 @@
 
 // [POST] /project/create
 
+const Chat = require("../models/chat.model");
 const Project = require("../models/project.mode");
 const checkIsObjectId = require("../utiliti/checkId.JS");
 
 const create = async (req, res) => {
   try {
+    const { id } = req.user;
+    const { client, leader, member } = req.body;
     const project = new Project(req.body);
     await project.save();
+    // tạo nhóm chat cho project
+    // lấy id của thành viên
+    let combineArray = client.concat(leader, member);
+    // lọc những user bị trùng
+    let uniqueMap = new Map();
+    combineArray.forEach((item) => {
+      if (!uniqueMap.has(item.id)) {
+        uniqueMap.set(item.id, item.id)
+      }
+    })
+    // Chuyển đổi Map trở lại thành mảng các đối tượng
+    let uniqueArray = Array.from(uniqueMap.values());
+
+    const chat = new Chat({
+      chatName: req.body.title,
+      isGroupChat: true,
+      users: uniqueArray,
+      groupAdmin: [id, leader],
+      createdBy: { user_id: id }
+    })
+    await chat.save();
     res.status(200).json({
       messages: "Create project success",
       data: project

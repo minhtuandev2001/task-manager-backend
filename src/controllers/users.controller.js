@@ -1,6 +1,7 @@
 const { v4: uuidv4 } = require("uuid");
 const User = require("../models/user.model");
 const Notification = require("../models/notification.model");
+const Chat = require("../models/chat.model");
 
 // [GET] /users?keyword={keyword}
 const getUser = async (req, res) => {
@@ -231,13 +232,21 @@ const acceptFriend = async (req, res) => {
     await User.updateOne({ _id: req.params.id }, {
       $pull: { requestFriends: id }
     })
-    let room_id = uuidv4();
+
+    // tạo phòng chat
+    const chatRoom = new Chat({
+      users: [req.params.id, id]
+    });
+    await chatRoom.save();
+
+    console.log("check ", chatRoom)
+    console.log("check ", chatRoom._id)
 
     await User.updateOne({ _id: id }, {
       $addToSet: {
         friendsList: {
           user_id: req.params.id,
-          room_chat_id: room_id
+          room_chat_id: chatRoom._id
         }
       }
     })
@@ -245,7 +254,7 @@ const acceptFriend = async (req, res) => {
       $addToSet: {
         friendsList: {
           user_id: id,
-          room_chat_id: room_id
+          room_chat_id: chatRoom._id
         }
       }
     })
