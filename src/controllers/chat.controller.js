@@ -22,8 +22,9 @@ const getChat = async (req, res) => {
       }
       // lấy messages lần gửi mới nhất nếu đã nhắn tin
       if (chat.latestMessageId) {
-        const message = await Message.findOne({ _id: chat.latestMessageId, deleted: false })
+        const message = await Message.findOne({ _id: chat.latestMessageId, deleted: false }).lean();
         if (message) { // có message hoặc message chưa bị xóa thì lấy
+          message.infoSender = await User.findOne({ _id: message.sender });
           chat.latestMessage = message;
         }
       }
@@ -33,6 +34,7 @@ const getChat = async (req, res) => {
       data: chats
     })
   } catch (error) {
+    console.log("check ", error)
     res.status(500).json({
       messages: "Fetch chat error"
     })

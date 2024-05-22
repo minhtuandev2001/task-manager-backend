@@ -6,6 +6,7 @@ const messageSchema = mongoose.Schema({
   room_chat_id: String,
   images: Array,
   files: Array,
+  usersRead: Array,
   deleted: { type: Boolean, default: false }
 }, {
   timestamps: true,

@@ -38,4 +38,16 @@ io.on("connection", (socket) => {
     socket.join(user.id);
     socket.emit("connected")
   })
+  socket.on("join chat", (id) => {
+    console.log("join room ", id)
+  })
+  // gửi tin nhắn cho các client
+  socket.on("new message", (message, userIds) => {
+    console.log("check ", message.infoSender._id);
+    console.log("check ", userIds);
+    userIds.forEach(id => {
+      io.in(id).emit("server return message", message);
+      io.in(id).emit("server return message noti", message);
+    });
+  })
 })

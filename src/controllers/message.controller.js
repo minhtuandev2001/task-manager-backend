@@ -1,3 +1,4 @@
+const Chat = require("../models/chat.model");
 const Message = require("../models/message.model");
 const User = require("../models/user.model");
 
@@ -5,10 +6,19 @@ const User = require("../models/user.model");
 // [POST] /create
 const create = async (req, res) => {
   try {
-    console.log("check ", req.body);
     const message = new Message(req.body);
     await message.save();
+
+    // cập nhật latest message
+    await Chat.updateOne({ _id: message.room_chat_id }, {
+      latestMessageId: message._id
+    })
+
+    // lấy thông tin message và trả về lại 
+    const newMessage = await Message.findOne({ _id: message._id, deleted: false }).lean();
+    newMessage.infoSender = await User.findOne({ _id: newMessage.sender, deleted: false }).select("username avatar");
     res.status(200).json({
+      data: newMessage,
       messages: "Send message success"
     })
   } catch (error) {
@@ -22,7 +32,6 @@ const create = async (req, res) => {
 const getMessages = async (req, res) => {
   try {
     const { room_chat_id } = req.params;
-    console.log("check ", room_chat_id)
     const messages = await Message.find({ room_chat_id: room_chat_id, deleted: false }).lean();
 
     // lấy thông tin user của từng message
@@ -40,7 +49,58 @@ const getMessages = async (req, res) => {
     })
   }
 }
+
+const updateStatusReadMessage = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const { idMessage } = req.params;
+    await Message.updateOne({ _id: idMessage, deleted: false }, {
+      $addToSet: { usersRead: id }
+    })
+    res.status(200).json({
+      messages: "Update status read message success"
+    })
+  } catch (error) {
+    res.status(500).json({
+      messages: "read message error"
+    })
+  }
+}
+
+const getMessageUnRead = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const chats = await Chat.find({ users: id }).lean();
+    for (const chat of chats) {
+      // lấy messages lần gửi mới nhất nếu đã nhắn tin
+      if (chat.latestMessageId) {
+        const message = await Message.findOne({
+          $and: [
+            { _id: chat.latestMessageId },
+            { deleted: false },
+            { usersRead: { $ne: id } }
+          ]
+        }).lean();
+        if (message) { // có message hoặc message chưa bị xóa thì lấy
+          message.infoSender = await User.findOne({ _id: message.sender });
+          chat.latestMessage = message;
+        }
+      }
+    }
+    res.status(200).json({
+      messages: "get count message unread",
+      data: chats
+    })
+  } catch (error) {
+    console.log("check ", error)
+    res.status(500).json({
+      messages: "get message unread error"
+    })
+  }
+}
 module.exports = {
   create,
-  getMessages
+  getMessages,
+  updateStatusReadMessage,
+  getMessageUnRead
 }

@@ -11,6 +11,8 @@ router.post("/create",
     { name: 'files' },
   ]), messageController.create)
 
+router.patch("/status-message/:idMessage", messageController.updateStatusReadMessage)
+router.get("/message-unread", messageController.getMessageUnRead)
 router.get("/:room_chat_id", messageController.getMessages)
 
 module.exports = router;
