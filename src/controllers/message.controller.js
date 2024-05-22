@@ -67,40 +67,8 @@ const updateStatusReadMessage = async (req, res) => {
   }
 }
 
-const getMessageUnRead = async (req, res) => {
-  try {
-    const { id } = req.user;
-    const chats = await Chat.find({ users: id }).lean();
-    for (const chat of chats) {
-      // lấy messages lần gửi mới nhất nếu đã nhắn tin
-      if (chat.latestMessageId) {
-        const message = await Message.findOne({
-          $and: [
-            { _id: chat.latestMessageId },
-            { deleted: false },
-            { usersRead: { $ne: id } }
-          ]
-        }).lean();
-        if (message) { // có message hoặc message chưa bị xóa thì lấy
-          message.infoSender = await User.findOne({ _id: message.sender });
-          chat.latestMessage = message;
-        }
-      }
-    }
-    res.status(200).json({
-      messages: "get count message unread",
-      data: chats
-    })
-  } catch (error) {
-    console.log("check ", error)
-    res.status(500).json({
-      messages: "get message unread error"
-    })
-  }
-}
 module.exports = {
   create,
   getMessages,
   updateStatusReadMessage,
-  getMessageUnRead
 }
