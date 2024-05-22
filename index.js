@@ -19,7 +19,7 @@ const io = new Server(server, {
 })
 global._io = io
 
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // router
