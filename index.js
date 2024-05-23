@@ -13,13 +13,12 @@ const server = http.createServer(app)
 const { Server } = require("socket.io");
 const io = new Server(server, {
   cors: {
-    // origin: "http://localhost:3000"
-    origin: "https://task-manager-zeta-gules.vercel.app"
+    origin: "http://localhost:3000"
   }
 })
 global._io = io
 
-app.use(cors(corsOptions));
+app.use(cors());
 app.use(express.json());
 
 // router

@@ -1,4 +1,4 @@
-const whitelist = ['https://task-manager-zeta-gules.vercel.app']
+const whitelist = ['http://localhost:3000']
 const corsOptions = {
   origin: function (origin, callback) {
     if (whitelist.indexOf(origin) !== -1) {
