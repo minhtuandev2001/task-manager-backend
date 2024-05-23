@@ -10,11 +10,8 @@ connectDB()
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-const https = require("https");
-const server = https.createServer({
-  key: fs.readFileSync(path.join(__dirname, 'key', 'key.pem')),
-  cert: fs.readFileSync(path.join(__dirname, 'key', 'cert.pem')),
-}, app)
+const http = require("http");
+const server = http.createServer(app)
 const { Server } = require("socket.io");
 const io = new Server(server, {
   cors: {
