@@ -13,7 +13,8 @@ const server = http.createServer(app)
 const { Server } = require("socket.io");
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000"
+    origin: ["https://task-manager-zeta-gules.vercel.app", "http://localhost:3000"],
+    credentials: true
   }
 })
 global._io = io
