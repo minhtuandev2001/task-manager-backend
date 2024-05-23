@@ -9,7 +9,7 @@ const router = require("./src/routes/client/index.route");
 connectDB()
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 const https = require("https");
 const server = https.createServer({
   key: fs.readFileSync(path.join(__dirname, 'key', 'key.pem')),
@@ -18,10 +18,8 @@ const server = https.createServer({
 const { Server } = require("socket.io");
 const io = new Server(server, {
   cors: {
-    // origin: ["https://task-manager-zeta-gules.vercel.app", "http://localhost:3000"],
-    // credentials: true
-    origin: "*",
-    methods: ["GET", "POST"]
+    origin: ["https://task-manager-zeta-gules.vercel.app", "http://localhost:3000"],
+    credentials: true,
   }
 })
 global._io = io
