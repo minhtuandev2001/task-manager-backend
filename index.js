@@ -54,17 +54,19 @@ io.on("connection", (socket) => {
       io.in(id).emit("server return message noti", message);
     });
   })
-  socket.on("client send statusOnline", (id, listFriends, status) => {
-    listFriends.forEach((user) => {
-      io.to(user.user_id).emit("server return change statusOnline", { id, room_chat_id: user.room_chat_id, status });
+  socket.on("client send statusOnline", async (id, status) => {
+    let userExist = await User.findOne({ _id: id, deleted: false });
+    userExist.friendsList.forEach((idUser) => {
+      io.to(idUser).emit("server return change statusOnline", { id, status });
     })
   })
-  socket.on("disconnected", async (id, listFriends, status) => {
+  socket.on("disconnected", async (id, status) => {
     console.log("check diss", id)
-    listFriends.forEach((user) => {
-      io.to(user.user_id).emit("server return change statusOnline", { id, room_chat_id: user.room_chat_id, status });
-    })
+    console.log("check diss status", status)
     let userExist = await User.findOne({ _id: id, deleted: false });
+    userExist.friendsList.forEach((idUser) => {
+      io.to(idUser).emit("server return change statusOnline", { id, status });
+    })
     if (userExist) {
       // update statusOnline user
       await User.updateOne({ _id: userExist.id }, {

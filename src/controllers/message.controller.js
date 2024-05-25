@@ -6,6 +6,21 @@ const User = require("../models/user.model");
 // [POST] /create
 const create = async (req, res) => {
   try {
+    let users = req.body.users.split(",");
+    // cập nhật vị trí roomchat 
+    await User.updateMany({ _id: { $in: users } }, {
+      $pull: { rooms: req.body.room_chat_id },
+    })
+    await User.updateMany({ _id: { $in: users } }, {
+      $push: {
+        rooms: {
+          $each: [req.body.room_chat_id],
+          $position: 0
+        }
+      }
+    })
+
+    delete req.body.users;
     const message = new Message(req.body);
     await message.save();
 
@@ -14,7 +29,7 @@ const create = async (req, res) => {
       latestMessageId: message._id
     })
 
-    // lấy thông tin message và trả về lại 
+    // lấy thông tin message và trả về lại
     const newMessage = await Message.findOne({ _id: message._id, deleted: false }).lean();
     newMessage.infoSender = await User.findOne({ _id: newMessage.sender, deleted: false }).select("username avatar");
     res.status(200).json({
@@ -22,6 +37,7 @@ const create = async (req, res) => {
       messages: "Send message success"
     })
   } catch (error) {
+    console.log("check ", error)
     res.status(500).json({
       messages: "Error send message"
     })

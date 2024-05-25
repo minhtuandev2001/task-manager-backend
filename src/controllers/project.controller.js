@@ -3,6 +3,7 @@
 
 const Chat = require("../models/chat.model");
 const Project = require("../models/project.mode");
+const User = require("../models/user.model");
 const checkIsObjectId = require("../utiliti/checkId.JS");
 
 const create = async (req, res) => {
@@ -32,6 +33,15 @@ const create = async (req, res) => {
       createdBy: { user_id: id }
     })
     await chat.save();
+
+    await User.updateMany({ _id: { $in: uniqueArray } }, {
+      $push: {
+        rooms: {
+          $each: [chat._id],
+          $position: 0,
+        }
+      }
+    })
     res.status(200).json({
       messages: "Create project success",
       data: project

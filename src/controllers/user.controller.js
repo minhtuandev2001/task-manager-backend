@@ -28,8 +28,8 @@ const register = async (req, res) => {
         name: user.username,
         avatar: user.avatar,
         email: user.email,
-        friendsList: userExist.friendsList,
-        statusOnline: userExist.statusOnline,
+        friendsList: user.friendsList,
+        statusOnline: user.statusOnline,
         token: generateToken(user.id)
       }
     })
@@ -117,7 +117,6 @@ const changeStatusOnline = async (req, res) => {
     await User.updateOne({ _id: userExist.id }, req.body)
     res.status(200).json({
       messages: "Updated statusOnline user success",
-      data: userExist.friendsList
     })
   } catch (error) {
     console.log("check ", error)

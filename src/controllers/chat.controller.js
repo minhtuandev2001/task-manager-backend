@@ -1,12 +1,13 @@
 const Chat = require("../models/chat.model");
 const Message = require("../models/message.model");
 const User = require("../models/user.model");
+const mapOrder = require("../utiliti/mapOrder");
 
 // [GET] /chat
 const getChat = async (req, res) => {
   try {
-    const { id } = req.user;
-    const chats = await Chat.find({ users: id }).lean();
+    const { id, rooms } = req.user;
+    const chats = await Chat.find({ _id: { $in: rooms } }).lean();
     for (const chat of chats) {
       if (chat.isGroupChat) { // chat nhóm
         // quy tắc phải có 3 người mới tạo nhóm được
@@ -31,7 +32,7 @@ const getChat = async (req, res) => {
     }
     res.status(200).json({
       messages: "get chats success",
-      data: chats
+      data: mapOrder(chats, rooms, "_id")
     })
   } catch (error) {
     console.log("check ", error)

@@ -11,7 +11,6 @@ const getUser = async (req, res) => {
     const regex = new RegExp(keyword, "i");
     let query = {};
 
-    let friendListId = req.user.friendsList.map((friend) => friend.user_id);
     switch (req.query.statusFriend) {
       case "friends":
         query = {
@@ -19,7 +18,7 @@ const getUser = async (req, res) => {
             { _id: { $ne: req.user.id } },
             { _id: { $nin: req.user.acceptFriends } },
             { _id: { $nin: req.user.requestFriends } },
-            { _id: { $nin: friendListId } },
+            { _id: { $nin: req.user.friendsList } },
             {
               $or: [
                 { username: regex },
@@ -34,7 +33,7 @@ const getUser = async (req, res) => {
       case "myfriends":
         query = {
           $and: [
-            { _id: { $in: friendListId } },
+            { _id: { $in: req.user.friendsList } },
             {
               $or: [
                 { username: regex },
@@ -244,17 +243,23 @@ const acceptFriend = async (req, res) => {
 
     await User.updateOne({ _id: id }, {
       $addToSet: {
-        friendsList: {
-          user_id: req.params.id,
-          room_chat_id: chatRoom._id
+        friendsList: req.params.id
+      },
+      $push: {
+        rooms: {
+          $each: [chatRoom._id],
+          $position: 0
         }
       }
     })
     await User.updateOne({ _id: req.params.id }, {
       $addToSet: {
-        friendsList: {
-          user_id: id,
-          room_chat_id: chatRoom._id
+        friendsList: id
+      },
+      $push: {
+        rooms: {
+          $each: [chatRoom._id],
+          $position: 0
         }
       }
     })
@@ -300,10 +305,10 @@ const deleteFriend = async (req, res) => {
     // loại bỏ id của A khỏi friendsList của B
     // loại bỏ id của B khỏi friendsList của A
     await User.updateOne({ _id: id }, {
-      $pull: { friendsList: { user_id: req.params.id } }
+      $pull: { friendsList: req.params.id }
     })
     await User.updateOne({ _id: req.params.id }, {
-      $pull: { friendsList: { user_id: id } }
+      $pull: { friendsList: id }
     })
     res.status(200).json({
       messages: "Successfully delete friend request"
