@@ -8,7 +8,8 @@ const chatShema = mongoose.Schema({
   groupAdmin: Array,
   createdBy: {
     user_id: String
-  }
+  },
+  deleted: { type: Boolean, default: false },
 }, {
   timestamps: true,
 })

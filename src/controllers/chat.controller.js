@@ -41,6 +41,29 @@ const getChat = async (req, res) => {
   }
 }
 
+const exitsChat = async (req, res) => {
+  try {
+    const { id_room_chat } = req.params;
+    const chat = await Chat.findOne({ _id: id_room_chat, deleted: false });
+    if (!chat) {
+      res.status(404).json({
+        messages: "Chat not found"
+      })
+      return;
+    }
+    await Chat.updateOne({ _id: id_room_chat }, {
+      $pull: { users: req.user.id }
+    })
+    res.status(200).json({
+      messages: "Delete chat success",
+    })
+  } catch (error) {
+    res.status(500).json({
+      messages: "Delete chat failed"
+    })
+  }
+}
 module.exports = {
-  getChat
+  getChat,
+  exitsChat
 }
