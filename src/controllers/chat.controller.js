@@ -12,12 +12,12 @@ const getChat = async (req, res) => {
         // quy tắc phải có 3 người mới tạo nhóm được
         // tạo thì cần 3 nhưng sau đó xóa đi hết vẫn được
         // => nhóm sau đó có thể chỉ còn 2 hoặc 1
-        const infoUsers = await User.find({ _id: { $in: chat.users } }).select("username avatar");
+        const infoUsers = await User.find({ _id: { $in: chat.users } }).select("username avatar statusOnline");
         chat.infoUsers = infoUsers
       } else { // chat đơn
         // lấy id của đối phương 
         let idUser = chat.users[0] === id ? chat.users[1] : chat.users[0]
-        const infoUser = await User.findOne({ _id: idUser }).select("username avatar")
+        const infoUser = await User.findOne({ _id: idUser }).select("username avatar statusOnline")
         chat.infoUser = infoUser;
       }
       // lấy messages lần gửi mới nhất nếu đã nhắn tin

@@ -28,6 +28,8 @@ const register = async (req, res) => {
         name: user.username,
         avatar: user.avatar,
         email: user.email,
+        friendsList: userExist.friendsList,
+        statusOnline: userExist.statusOnline,
         token: generateToken(user.id)
       }
     })
@@ -42,7 +44,7 @@ const register = async (req, res) => {
 // [POST] /user/login
 const login = async (req, res) => {
   try {
-    const userExist = await User.findOne({ email: req.body.email });
+    let userExist = await User.findOne({ email: req.body.email });
     if (!userExist) {
       res.status(404).json({
         messages: "Account does not exist"
@@ -55,6 +57,10 @@ const login = async (req, res) => {
       })
       return
     }
+    // update statusOnline user
+    await User.updateOne({ _id: userExist.id }, {
+      statusOnline: true,
+    })
     res.status(200).json({
       messages: "Login success",
       data: {
@@ -62,6 +68,8 @@ const login = async (req, res) => {
         name: userExist.username,
         avatar: userExist.avatar,
         email: userExist.email,
+        friendsList: userExist.friendsList,
+        statusOnline: userExist.statusOnline,
         token: generateToken(userExist.id)
       }
     })
@@ -95,8 +103,32 @@ const getUser = async (req, res) => {
   }
 }
 
+// [PATCH] /users/change-status-online
+const changeStatusOnline = async (req, res) => {
+  try {
+    let userExist = await User.findOne({ _id: req.user._id, deleted: false });
+    if (!userExist) {
+      res.status(404).json({
+        messages: "Account does not exist"
+      })
+      return
+    }
+    // update statusOnline user
+    await User.updateOne({ _id: userExist.id }, req.body)
+    res.status(200).json({
+      messages: "Updated statusOnline user success",
+      data: userExist.friendsList
+    })
+  } catch (error) {
+    console.log("check ", error)
+    res.status(500).json({
+      messages: "Error update statusOnline of user"
+    })
+  }
+}
 module.exports = {
   register,
   login,
   getUser,
+  changeStatusOnline
 }

@@ -13,6 +13,7 @@ const PORT = process.env.PORT || 4000;
 const http = require("http");
 const server = http.createServer(app)
 const { Server } = require("socket.io");
+const User = require("./src/models/user.model");
 const io = new Server(server, {
   cors: {
     origin: ["https://task-manager-zeta-gules.vercel.app", "http://localhost:3000"],
@@ -52,5 +53,23 @@ io.on("connection", (socket) => {
       io.in(id).emit("server return message", message);
       io.in(id).emit("server return message noti", message);
     });
+  })
+  socket.on("client send statusOnline", (id, listFriends, status) => {
+    listFriends.forEach((user) => {
+      io.to(user.user_id).emit("server return change statusOnline", { id, room_chat_id: user.room_chat_id, status });
+    })
+  })
+  socket.on("disconnected", async (id, listFriends, status) => {
+    console.log("check diss", id)
+    listFriends.forEach((user) => {
+      io.to(user.user_id).emit("server return change statusOnline", { id, room_chat_id: user.room_chat_id, status });
+    })
+    let userExist = await User.findOne({ _id: id, deleted: false });
+    if (userExist) {
+      // update statusOnline user
+      await User.updateOne({ _id: userExist.id }, {
+        statusOnline: false
+      })
+    }
   })
 })

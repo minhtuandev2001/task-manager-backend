@@ -18,7 +18,7 @@ const userSchema = mongoose.Schema({
   acceptFriends: Array,
   requestFriends: Array,
   friendsList: [friendItemSchema],
-  statusOnline: String,
+  statusOnline: { type: Boolean, default: true }, // vừa đăng ký, sau khi thoát trang website thì sẽ cập nhật false
   deleted: { type: Boolean, default: false }
 }, {
   timestamps: true
