@@ -21,7 +21,14 @@ const create = async (req, res) => {
     })
 
     delete req.body.users;
-    const message = new Message(req.body);
+    const message = new Message({
+      sender: req.body.sender,
+      content: req.body.content,
+      room_chat_id: req.body.room_chat_id,
+      usersRead: req.body.usersRead,
+      images: req.body.images,
+      files: req.body.fileDrive,
+    });
     await message.save();
 
     // cập nhật latest message
