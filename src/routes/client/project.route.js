@@ -11,6 +11,7 @@ router.patch('/done-project/:id', projectController.doneProject)
 router.get('/detail/:id', projectController.detailProject)
 router.delete('/delete/:id', projectController.deleteProject)
 router.get('/:id', projectController.getUserInProject)
+router.patch('/join-project', projectController.joinProject)
 
 
 module.exports = router

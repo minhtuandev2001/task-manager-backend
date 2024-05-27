@@ -268,9 +268,7 @@ const deleteProject = async (req, res) => {
         {
           $or: [
             { "createdBy.user_id": id },
-            { client: { $elemMatch: { id: id } } },
             { leader: { $elemMatch: { id: id } } },
-            { member: { $elemMatch: { id: id } } }
           ]
         }
       ]
@@ -328,6 +326,42 @@ const getUserInProject = async (req, res) => {
     })
   }
 }
+
+// [PATCH] /project/join
+const joinProject = async (req, res) => {
+  try {
+    const { id, email } = req.user
+    const { key } = req.body;
+    const project = await Project.findOne({ keyProject: key, deleted: false });
+    if (!project) {
+      res.status(404).json({
+        messages: "Projejct not found"
+      })
+      return;
+    }
+    await Project.updateOne({ _id: project.id }, {
+      $addToSet: {
+        member: {
+          id: id,
+          email: email
+        }
+      }
+    })
+    // thêm thông tin của user mới vào phần member
+    project.member.push({
+      id: id,
+      email: email
+    })
+    res.status(200).json({
+      messages: "Join project success",
+      data: project
+    })
+  } catch (error) {
+    res.status(500).json({
+      messages: "Join project failed"
+    })
+  }
+}
 module.exports = {
   create,
   getProject,
@@ -336,5 +370,6 @@ module.exports = {
   doneProject,
   detailProject,
   deleteProject,
-  getUserInProject
+  getUserInProject,
+  joinProject
 }
