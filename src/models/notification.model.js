@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const notificationSchema = mongoose.Schema({
   user_id_send: String,
-  user_id_receiver: String,
+  user_id_receiver: Array,
   content: String,
   read: { type: Boolean, default: false },
   deleted: { type: Boolean, default: false }

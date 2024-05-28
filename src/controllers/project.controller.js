@@ -2,6 +2,7 @@
 // [POST] /project/create
 
 const Chat = require("../models/chat.model");
+const Notification = require("../models/notification.model");
 const Project = require("../models/project.mode");
 const User = require("../models/user.model");
 const checkIsObjectId = require("../utiliti/checkId.JS");
@@ -25,23 +26,51 @@ const create = async (req, res) => {
     // Chuyển đổi Map trở lại thành mảng các đối tượng
     let uniqueArray = Array.from(uniqueMap.values());
 
-    const chat = new Chat({
+    const newChat = new Chat({
       chatName: req.body.title,
       isGroupChat: true,
       users: uniqueArray,
       groupAdmin: [id, leader],
       createdBy: { user_id: id }
     })
-    await chat.save();
+    await newChat.save();
 
     await User.updateMany({ _id: { $in: uniqueArray } }, {
       $push: {
         rooms: {
-          $each: [chat._id],
+          $each: [newChat._id],
           $position: 0,
         }
       }
     })
+    // lấy về thông tin chat dầy đủ 
+    // lấy thông tin của các member trong nhóm chat
+    const chat = await Chat.findOne({ _id: newChat.id }).lean();
+    const infoUsers = await User.find({ _id: { $in: newChat.users } }).select("username avatar statusOnline").lean();
+    chat.infoUsers = infoUsers;
+    // kết thúc lấy về thông tin chat dầy đủ 
+    // kết thúc tạo nhóm chat cho project
+
+    // tạo, gửi thông báo
+    let noti = {
+      user_id_send: id,
+      user_id_receiver: uniqueArray,
+      content: "Added you to a project",
+    }
+    const notification = new Notification(noti)
+    await notification.save();
+    // đính kèm thông tin người tạo project
+    noti.infoUser = req.user;
+
+    uniqueArray.forEach((IDmember) => {
+      // gửi đến các client là member trong projetc ngoại trừ người tạo
+      _io.in(IDmember).emit("CREATE PROJECT", project,
+        noti,
+        chat
+      );
+    })
+    // kết thúc tạo, gửi thông báo
+
     res.status(200).json({
       messages: "Create project success",
       data: project

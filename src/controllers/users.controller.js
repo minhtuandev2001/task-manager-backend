@@ -121,7 +121,7 @@ const requestAddFriend = async (req, res) => {
     // tạo thông báo 
     let noti = {
       user_id_send: id,
-      user_id_receiver: req.params.id,
+      user_id_receiver: [req.params.id],
       content: "has sent you a friend request",
     }
     const notification = new Notification(noti)
@@ -266,7 +266,7 @@ const acceptFriend = async (req, res) => {
     // tạo thông báo 
     let noti = {
       user_id_send: id,
-      user_id_receiver: req.params.id,
+      user_id_receiver: [req.params.id],
       content: "has accepted your friend request",
     }
     const notification = new Notification(noti)
