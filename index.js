@@ -42,9 +42,11 @@ io.on("connection", (socket) => {
     socket.join(user.id);
     socket.emit("connected")
   })
+
   socket.on("join chat", (id) => {
     console.log("join room ", id)
   })
+
   // gửi tin nhắn cho các client
   socket.on("new message", (message, userIds) => {
     console.log("check ", message.infoSender._id);
@@ -54,18 +56,20 @@ io.on("connection", (socket) => {
       io.in(id).emit("server return message noti", message);
     });
   })
+
   socket.on("client send statusOnline", async (id, status) => {
+    console.log("check online", id, status)
     let userExist = await User.findOne({ _id: id, deleted: false });
     userExist.friendsList.forEach((idUser) => {
-      io.to(idUser).emit("server return change statusOnline", { id, status });
+      io.to(idUser).emit("server return statusOnline", { id, status });
     })
   })
+
   socket.on("disconnected", async (id, status) => {
-    console.log("check diss", id)
-    console.log("check diss status", status)
+    console.log("check diss", id, status)
     let userExist = await User.findOne({ _id: id, deleted: false });
     userExist.friendsList.forEach((idUser) => {
-      io.to(idUser).emit("server return change statusOnline", { id, status });
+      io.to(idUser).emit("server return statusOnline", { id, status });
     })
     if (userExist) {
       // update statusOnline user

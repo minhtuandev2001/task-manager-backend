@@ -64,7 +64,37 @@ const exitsChat = async (req, res) => {
     })
   }
 }
+
+const create = async (req, res) => {
+  try {
+    const { id } = req.user;
+    console.log("check ", id)
+    console.log("check ", req.body)
+    const chat = new Chat(req.body)
+    await chat.save();
+
+    // thêm group cho các user khác
+    req.body.users.forEach(async (idUser) => {
+      await User.updateOne({ _id: idUser }, {
+        $push: {
+          rooms: {
+            $each: [chat.id],
+            $position: 0
+          }
+        }
+      })
+    });
+    res.status(200).json({
+      messages: "Create chat success"
+    })
+  } catch (error) {
+    res.status(500).json({
+      messages: "Create chat failed"
+    })
+  }
+}
 module.exports = {
   getChat,
-  exitsChat
+  exitsChat,
+  create
 }
