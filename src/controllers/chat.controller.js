@@ -1,5 +1,6 @@
 const Chat = require("../models/chat.model");
 const Message = require("../models/message.model");
+const Notification = require("../models/notification.model");
 const User = require("../models/user.model");
 const mapOrder = require("../utiliti/mapOrder");
 
@@ -70,20 +71,44 @@ const create = async (req, res) => {
     const { id } = req.user;
     console.log("check ", id)
     console.log("check ", req.body)
-    const chat = new Chat(req.body)
-    await chat.save();
+    const newChat = new Chat(req.body)
+    await newChat.save();
 
     // thêm group cho các user khác
     req.body.users.forEach(async (idUser) => {
       await User.updateOne({ _id: idUser }, {
         $push: {
           rooms: {
-            $each: [chat.id],
+            $each: [newChat.id],
             $position: 0
           }
         }
       })
     });
+    // kết thúc thêm group cho các user khác
+
+    // tạo thông báo 
+    const noti = {
+      user_id_send: id,
+      user_id_receiver: req.body.users,
+      content: "added you to a chat group",
+    }
+    noti.infoUser = req.user;
+    const notification = new Notification(noti);
+    await notification.save();
+    // kết thúc tạo thông báo 
+
+
+    // lấy thông tin gửi thông báo đến tất cả các member trong group
+    const chat = await Chat.findOne({ _id: newChat.id }).lean();
+    // lấy thông tin của các member trong nhóm chat
+    const infoUsers = await User.find({ _id: { $in: newChat.users } }).select("username avatar statusOnline").lean();
+    chat.infoUsers = infoUsers;
+    // gửi thông tin nhóm chat, noti đến các member
+    req.body.users.forEach(idUser => {
+      _io.in(idUser).emit("CREATE CHAT", chat, noti)
+    })
+    // kết thúc lấy thông tin gửi thông báo đến tất cả các member trong group
     res.status(200).json({
       messages: "Create chat success"
     })
