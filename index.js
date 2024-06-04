@@ -53,6 +53,7 @@ io.on("connection", (socket) => {
     console.log("check ", userIds);
     userIds.forEach(id => {
       io.in(id).emit("server return message", message);
+      io.in(id).emit("server return message noti", message);
     });
   })
 

@@ -27,6 +27,7 @@ const projectSchema = mongoose.Schema({
   client: [clientSchema],
   leader: [leaderSchema],
   member: [memberSchema],
+  room_chat_id: String,
   keyProject: { type: String },
   createdBy: {
     user_id: { type: String }

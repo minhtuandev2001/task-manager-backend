@@ -247,7 +247,7 @@ const acceptFriend = async (req, res) => {
       },
       $push: {
         rooms: {
-          $each: [chatRoom._id],
+          $each: [chatRoom.id],
           $position: 0
         }
       }
@@ -258,7 +258,7 @@ const acceptFriend = async (req, res) => {
       },
       $push: {
         rooms: {
-          $each: [chatRoom._id],
+          $each: [chatRoom.id],
           $position: 0
         }
       }

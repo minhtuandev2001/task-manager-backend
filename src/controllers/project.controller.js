@@ -11,8 +11,6 @@ const create = async (req, res) => {
   try {
     const { id } = req.user;
     const { client, leader, member } = req.body;
-    const project = new Project(req.body);
-    await project.save();
     // tạo nhóm chat cho project
     // lấy id của thành viên
     let combineArray = client.concat(leader, member);
@@ -35,10 +33,17 @@ const create = async (req, res) => {
     })
     await newChat.save();
 
+    // tạo project
+    req.body.room_chat_id = newChat.id;
+    console.log("check ", newChat.id)
+    const project = new Project(req.body);
+    await project.save();
+    // end tạo project
+
     await User.updateMany({ _id: { $in: uniqueArray } }, {
       $push: {
         rooms: {
-          $each: [newChat._id],
+          $each: [newChat.id],
           $position: 0,
         }
       }
@@ -63,7 +68,7 @@ const create = async (req, res) => {
     noti.infoUser = req.user;
 
     uniqueArray.forEach((IDmember) => {
-      // gửi đến các client là member trong projetc ngoại trừ người tạo
+      // gửi đến các client là member trong projetc 
       _io.in(IDmember).emit("CREATE PROJECT", project,
         noti,
         chat
@@ -118,6 +123,7 @@ const getProject = async (req, res) => {
 // [POST] /project/update/:id
 const update = async (req, res) => {
   const { id } = req.user // lấy từ middleware auth
+  const { client, leader, member } = req.body;
   console.log("check ", req.params.id)
   try {
     if (!checkIsObjectId(req.params.id)) {
@@ -151,10 +157,85 @@ const update = async (req, res) => {
       })
       return
     }
+    // update 
     await Project.updateOne({ _id: req.params.id }, req.body);
+
+    // Cập nhật thông tin cho những người còn tồn tại trong project 
+    // lấy id của thành viên được update
+    let combineArray = client.concat(leader, member);
+    // lọc những user bị trùng
+    let uniqueMap = new Map();
+    combineArray.forEach((item) => {
+      if (!uniqueMap.has(item.id)) {
+        uniqueMap.set(item.id, item.id)
+      }
+    })
+    // Chuyển đổi Map trở lại thành mảng các đối tượng
+    let uniqueArray = Array.from(uniqueMap.values());
+
+    // tạo, gửi thông báo
+    let noti = {
+      user_id_send: id,
+      user_id_receiver: uniqueArray,
+      content: `updated the project ${req.body.title}`,
+    }
+    const notification = new Notification(noti)
+    await notification.save();
+    // đính kèm thông tin người tạo project
+    noti.infoUser = req.user;
+    console.log("check ", uniqueArray)
+    // thêm room chat cho những người mới được thêm vào project
+    await User.updateMany({ _id: { $in: uniqueArray } }, {
+      $addToSet: { rooms: project.room_chat_id }
+    })
+    uniqueArray.forEach((IDmember) => {
+      // gửi đến các client là member trong projetc 
+      _io.in(IDmember).emit("UPDATE PROJECT", noti);
+    })
+    // kết thúc tạo, gửi thông báo
+    // kết thúc cập nhật thông tin cho những người còn tồn tại trong project 
+
+    // Cập nhật thông tin cho những người bị loại khỏi project tồn tại trong project 
+    // lấy id của thành viên
+    let combineArray2 = project.client.concat(project.leader, project.member);
+    // lọc những user bị trùng
+    let uniqueMap2 = new Map();
+    combineArray2.forEach((item) => {
+      if (!uniqueMap2.has(item.id)) {
+        uniqueMap2.set(item.id, item.id);
+      }
+    })
+    // Chuyển đổi Map trở lại thành mảng các đối tượng
+    let uniqueArray2 = Array.from(uniqueMap2.values());
+
+    // tạo, gửi thông báo
+    let noti2 = {
+      user_id_send: id,
+      user_id_receiver: uniqueArray2,
+      content: `removed you from the project ${req.body.title}`,
+    }
+    const notification2 = new Notification(noti2);
+    await notification2.save();
+    // đính kèm thông tin người tạo project
+    noti.infoUser = req.user;
+    // chỉ lấy nhưng id của user bị loại , gửi thong báo cho người bị loại
+    uniqueArray2 = uniqueArray2.filter(item => !uniqueArray.includes(item));
+    console.log("check ", uniqueArray2);
+    // xóa room chat của những người bị loại bỏ
+    await User.updateMany({ _id: { $in: uniqueArray2 } }, {
+      $pull: { rooms: project.room_chat_id }
+    })
+    uniqueArray2.forEach((IDmember) => {
+      // gửi đến các client là bị xóa khỏi project
+      _io.in(IDmember).emit("UPDATE PROJECT", noti);
+    })
+    // kết thúc tạo, gửi thông báo
+    // kết thúc cập nhật thông tin cho những người bị loại khỏi project tồn tại trong project 
+
     res.status(200).json({
       messages: 'Project update success',
     })
+
   } catch (error) {
     console.log("check ", error)
     res.status(500).json({
@@ -191,6 +272,36 @@ const changeStarProject = async (req, res) => {
       return
     }
     await Project.updateOne({ _id: req.params.id }, req.body)
+
+    // lấy id của thành viên
+    let combineArray = checkUserHasPermissionInProject.client.concat(checkUserHasPermissionInProject.leader, checkUserHasPermissionInProject.member);
+    // lọc những user bị trùng
+    let uniqueMap = new Map();
+    combineArray.forEach((item) => {
+      if (!uniqueMap.has(item.id)) {
+        uniqueMap.set(item.id, item.id)
+      }
+    })
+    // Chuyển đổi Map trở lại thành mảng các đối tượng
+    let uniqueArray = Array.from(uniqueMap.values());
+
+    // tạo, gửi thông báo
+    let noti = {
+      user_id_send: id,
+      user_id_receiver: uniqueArray,
+      content: `updated star the project ${checkUserHasPermissionInProject.title}`,
+    }
+    const notification = new Notification(noti)
+    await notification.save();
+    // đính kèm thông tin người tạo project
+    noti.infoUser = req.user;
+
+    uniqueArray.forEach((IDmember) => {
+      // gửi đến các client là member trong projetc 
+      _io.in(IDmember).emit("UPDATE STAR", noti);
+    })
+    // kết thúc tạo, gửi thông báo
+
     res.status(200).json({
       messages: "Star project success"
     })
@@ -228,6 +339,34 @@ const doneProject = async (req, res) => {
       })
       return
     }
+    // lấy id của thành viên
+    let combineArray = checkUserHasPermissionInProject.client.concat(checkUserHasPermissionInProject.leader, checkUserHasPermissionInProject.member);
+    // lọc những user bị trùng
+    let uniqueMap = new Map();
+    combineArray.forEach((item) => {
+      if (!uniqueMap.has(item.id)) {
+        uniqueMap.set(item.id, item.id)
+      }
+    })
+    // Chuyển đổi Map trở lại thành mảng các đối tượng
+    let uniqueArray = Array.from(uniqueMap.values());
+
+    // tạo, gửi thông báo
+    let noti = {
+      user_id_send: id,
+      user_id_receiver: uniqueArray,
+      content: `marked the project ${checkUserHasPermissionInProject.title} completed`,
+    }
+    const notification = new Notification(noti)
+    await notification.save();
+    // đính kèm thông tin người tạo project
+    noti.infoUser = req.user;
+
+    uniqueArray.forEach((IDmember) => {
+      // gửi đến các client là member trong projetc 
+      _io.in(IDmember).emit("DONE PROJECT", noti);
+    })
+    // kết thúc tạo, gửi thông báo
     await Project.updateOne({ _id: req.params.id }, req.body)
     res.status(200).json({
       messages: "Done project success"
@@ -311,6 +450,38 @@ const deleteProject = async (req, res) => {
     await Project.updateOne({ _id: req.params.id }, {
       deleted: true
     })
+
+    // lấy id của thành viên
+    let combineArray = project.client.concat(project.leader, project.member);
+    // lọc những user bị trùng
+    let uniqueMap = new Map();
+    combineArray.forEach((item) => {
+      if (!uniqueMap.has(item.id)) {
+        uniqueMap.set(item.id, item.id)
+      }
+    })
+    // Chuyển đổi Map trở lại thành mảng các đối tượng
+    let uniqueArray = Array.from(uniqueMap.values());
+
+    // tạo, gửi thông báo
+    let noti = {
+      user_id_send: id,
+      user_id_receiver: uniqueArray,
+      content: `Project deleted ${project.title}`,
+    }
+    const notification = new Notification(noti)
+    await notification.save();
+    // đính kèm thông tin người tạo project
+    noti.infoUser = req.user;
+    await User.updateMany({ _id: { $in: uniqueArray } }, {
+      $pull: { rooms: project.room_chat_id }
+    })
+    uniqueArray.forEach((IDmember) => {
+      // gửi đến các client là member trong projetc 
+      _io.in(IDmember).emit("DELETE PROJECT", noti);
+    })
+    // kết thúc tạo, gửi thông báo
+
     res.status(200).json({
       messages: "Delete project success"
     })
