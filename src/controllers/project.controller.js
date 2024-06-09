@@ -124,7 +124,6 @@ const getProject = async (req, res) => {
 const update = async (req, res) => {
   const { id } = req.user // lấy từ middleware auth
   const { client, leader, member } = req.body;
-  console.log("check ", req.params.id)
   try {
     if (!checkIsObjectId(req.params.id)) {
       res.status(400).json({
@@ -183,7 +182,6 @@ const update = async (req, res) => {
     await notification.save();
     // đính kèm thông tin người tạo project
     noti.infoUser = req.user;
-    console.log("check ", uniqueArray)
     // thêm room chat cho những người mới được thêm vào project
     await User.updateMany({ _id: { $in: uniqueArray } }, {
       $addToSet: { rooms: project.room_chat_id }

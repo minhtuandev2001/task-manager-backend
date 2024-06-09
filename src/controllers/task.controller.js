@@ -1,3 +1,4 @@
+const Notification = require("../models/notification.model");
 const Project = require("../models/project.mode");
 const Task = require("../models/task.model")
 
@@ -45,11 +46,28 @@ const create = async (req, res) => {
       },
     });
     await task.save();
+    let idsMember = task.member.map(item => item.id);
+    // tạo, gửi thông báo
+    let noti = {
+      user_id_send: id,
+      user_id_receiver: idsMember,
+      content: `added a new task in the project ${existProject.title}`,
+    }
+    const notification = new Notification(noti)
+    await notification.save();
+    // đính kèm thông tin người tạo project
+    noti.infoUser = req.user;
+    // gửi thông báo đến các member có trong task
+    idsMember.forEach(idMember => {
+      if (idMember !== id) {
+        _io.in(idMember).emit("CREATE TASK", noti)
+      }
+    });
+    // kết thúc gửi thông báo đến các member có trong task
+
     res.status(200).json({
       messages: "Create task success",
-      data: task
     })
-
   } catch (error) {
     console.log("check ", error)
     res.status(500).json({
@@ -112,7 +130,7 @@ const getTasks = async (req, res) => {
           { status: regexStatus },
           { title: regexSearch },
         ]
-      }).sort({ star: "desc", createdAt: "desc", }).lean()
+      }).sort({ star: "desc", createdAt: "desc", }).lean();
       for (const task of tasks) {
         const infoProject = await Project.findOne({ _id: task.project_id, deleted: false });
         task.infoProject = infoProject
@@ -180,6 +198,45 @@ const update = async (req, res) => {
       },
     }
     const newTask = await Task.updateOne({ _id: req.params.id }, task)
+
+    let idsMemberNew = task.member.map(item => item.id); // các member sẽ có trong project sau khi tạo
+    let idsMemberRemoveTask = existTask.member.filter(item => !idsMemberNew.includes(item.id)); // các member sẽ có trong project sau khi tạo
+
+    // tạo, gửi thông báo cho member trong task
+    let noti = {
+      user_id_send: id,
+      user_id_receiver: idsMemberNew,
+      content: `updated the mission ${existTask.title}`,
+    }
+    const notification = new Notification(noti);
+    await notification.save();
+    // đính kèm thông tin người tạo project
+    noti.infoUser = req.user;
+    // gửi thông báo đến các member có trong task
+    idsMemberNew.forEach(idMember => {
+      if (idMember !== id) {
+        _io.in(idMember).emit("UPDATE TASK", noti)
+      }
+    });
+    // kết thúc gửi thông báo đến các member có trong task
+    // tạo, gửi thông báo cho member trong task
+    let noti2 = {
+      user_id_send: id,
+      user_id_receiver: idsMemberRemoveTask,
+      content: `removes you from the mission ${existTask.title}`,
+    }
+    const notification2 = new Notification(noti2);
+    await notification2.save();
+    // đính kèm thông tin người tạo project
+    noti2.infoUser = req.user;
+    // gửi thông báo đến các member có trong task
+    idsMemberRemoveTask.forEach(idMember => {
+      if (idMember !== id) {
+        _io.in(idMember).emit("UPDATE TASK", noti2);
+      }
+    });
+    // kết thúc gửi thông báo đến các member có trong task
+
     res.status(200).json({
       messages: "Update task success",
       data: newTask
@@ -240,12 +297,13 @@ const taskDetail = async (req, res) => {
 // [DELETE] /task/:id
 const deleteTask = async (req, res) => {
   try {
+    const { id } = req.user;
     const existTask = await Task.findOne({ _id: req.params.id, deleted: false })
     if (!existTask) {
       res.status(404).json({
         messages: "Task not found"
       })
-      return
+      return;
     }
     const permission = await Task.findOne({
       $and: [
@@ -261,10 +319,31 @@ const deleteTask = async (req, res) => {
       return
     }
     await Task.updateOne({ _id: req.params.id }, { deleted: true })
+
+    // tạo, gửi thông báo
+    let idsMember = existTask.member.map(item => item.id);
+    let noti = {
+      user_id_send: id,
+      user_id_receiver: idsMember,
+      content: `deleted the quest ${existTask.title}`,
+    }
+    const notification = new Notification(noti)
+    await notification.save();
+    // đính kèm thông tin người tạo project
+    noti.infoUser = req.user;
+    // gửi thông báo đến các member có trong task
+    idsMember.forEach(idMember => {
+      if (idMember !== id) {
+        _io.in(idMember).emit("DELETE TASK", noti);
+      }
+    });
+    // kết thúc gửi thông báo đến các member có trong task
+
     res.status(200).json({
       messages: "Delete task success"
     })
   } catch (error) {
+    console.log("check ", error);
     res.status(500).json({
       messages: "Delete task failed"
     })
@@ -274,6 +353,7 @@ const deleteTask = async (req, res) => {
 // [PATCH] /task/change-star/:id
 const changeStar = async (req, res) => {
   try {
+    const { id } = req.user;
     const existTask = await Task.findOne({ _id: req.params.id, deleted: false })
     if (!existTask) {
       res.status(404).json({
@@ -295,6 +375,26 @@ const changeStar = async (req, res) => {
       return
     }
     await Task.updateOne({ _id: req.params.id, deleted: false }, req.body)
+
+    // tạo, gửi thông báo
+    let idsMember = existTask.member.map(item => item.id);
+    let noti = {
+      user_id_send: id,
+      user_id_receiver: idsMember,
+      content: `changed the star of the mission ${existTask.title}`,
+    }
+    const notification = new Notification(noti)
+    await notification.save();
+    // đính kèm thông tin người tạo project
+    noti.infoUser = req.user;
+    // gửi thông báo đến các member có trong task
+    idsMember.forEach(idMember => {
+      if (idMember !== id) {
+        _io.in(idMember).emit("UPDATE TASK", noti);
+      }
+    });
+    // kết thúc gửi thông báo đến các member có trong task
+
     res.status(200).json({
       messages: "Change star task success"
     })
