@@ -6,6 +6,7 @@ const usersRoutes = require("./users.route")
 const notificationRoutes = require("./notification.route")
 const chatRoutes = require("./chat.route")
 const messageRoutes = require("./message.route")
+const sendMailRoutes = require("./send_mail.route")
 
 const authMiddleware = require("../../middlewares/auth.middlewares")
 
@@ -18,4 +19,5 @@ module.exports = (app) => {
   app.use("/notification", authMiddleware.protect, notificationRoutes);
   app.use("/chat", authMiddleware.protect, chatRoutes);
   app.use("/message", authMiddleware.protect, messageRoutes);
+  app.use("/sendMail", authMiddleware.protect, sendMailRoutes);
 }
