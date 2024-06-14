@@ -125,9 +125,58 @@ const changeStatusOnline = async (req, res) => {
     })
   }
 }
+// [GET] /user/:id
+const getUserInfor = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const user = await User.findOne({ _id: id }).select("-password")
+    res.status(200).json({
+      messages: "get info success",
+      data: user
+    })
+  } catch (error) {
+    console.log("check ", error)
+    res.status(500).json({
+      messages: "Server error"
+    })
+  }
+}
+const update = async (req, res) => {
+  try {
+    const { id } = req.user;
+    await User.updateOne({ _id: id }, req.body);
+    const user = await User.findOne({ _id: id }).select("avatar email friendsList username statusOnline phone address");
+    res.status(200).json({
+      messages: "Update information success",
+      data: user
+    })
+  } catch (error) {
+    res.status(500).json({
+      messages: "Update failed"
+    })
+  }
+}
+const changeAvatar = async (req, res) => {
+  try {
+    const { id } = req.user;
+    await User.updateOne({ _id: id }, { avatar: req.body.avatar });
+    res.status(200).json({
+      messages: "Update information success",
+      data: req.body.avatar
+    })
+  } catch (error) {
+    res.status(500).json({
+      messages: "Update failed"
+    })
+  }
+}
+
 module.exports = {
   register,
   login,
   getUser,
-  changeStatusOnline
+  changeStatusOnline,
+  update,
+  getUserInfor,
+  changeAvatar
 }
