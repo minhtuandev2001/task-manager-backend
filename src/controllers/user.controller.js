@@ -1,7 +1,9 @@
+const { v4 } = require("uuid")
+const ForgotPassword = require("../models/forgot-password.model");
 const md5 = require("md5");
 const generateToken = require("../config/generateToken");
 const User = require("../models/user.model")
-
+const sendMailHelper = require("../utiliti/sendMail");
 // [POST] /user/register
 const register = async (req, res) => {
   try {
@@ -171,6 +173,102 @@ const changeAvatar = async (req, res) => {
   }
 }
 
+const sendForgotPassword = async (req, res) => {
+  try {
+    const email = req.body.email
+    // // check email có tồn tại không
+    // const existEmail = await User.findOne({
+    //   email: email,
+    //   deleted: false
+    // })
+    // if (!existEmail) {
+    //   req.flash("error", "Email does not exist")
+    //   res.redirect("back")
+    //   return
+    // }
+    // vc1:  tạo mã otp và lưu mã otp, email vào collection
+    const objectForgotPassword = {
+      email: email,
+      otp: "",
+      expireAt: Date.now()
+    }
+    objectForgotPassword.otp = v4();
+    const otp = new ForgotPassword(objectForgotPassword)
+    await otp.save()
+
+    // vc2: gửi mã otp qua email user 
+    const subject = "Mã OTP xác minh lấy lại mật khẩu"
+    const html = `
+    Mã OTP xác minh lấy lại mật khẩu là <b>${objectForgotPassword.otp}</b> Lưu ý không được để lọ, thời hạn sử dụng là 3 phút`
+    sendMailHelper.sendMail(email, subject, html)
+
+    res.status(200).json({
+      messages: "Send OTP success"
+    })
+  } catch (error) {
+    res.status(500).json({
+      messages: "Server error, reload"
+    })
+  }
+}
+
+const checkOtpPassword = async (req, res) => {
+  try {
+    const email = req.body.email
+    const otp = req.body.otp
+    const result = await ForgotPassword.findOne({
+      email: email,
+      otp: otp
+    })
+    if (!result) {
+      res.status(400).json({
+        messages: "OTP error or expired, resend"
+      })
+      return
+    }
+    // lấy ra thông tin người dùng sau khi đã check otp
+    const user = await User.findOne({
+      email: email
+    })
+    if (!user) {
+      res.status(404).json({
+        messages: "User not found"
+      })
+      return
+    }
+    res.status(200).json({
+      messages: "Check OTP success"
+    })
+  } catch (error) {
+    res.status(500).json({
+      messages: "Server error, reload"
+    })
+  }
+}
+
+const resetPasswordPost = async (req, res) => {
+  try {
+    const email = req.body.email
+    const password = md5(req.body.password)
+    const user = await User.findOne({
+      email: email,
+    })
+    if (!user) {
+      res.status(404).json({
+        messages: "User not found"
+      })
+      return
+    }
+    await User.updateOne({ email: email }, { password: password })
+    res.status(200).json({
+      messages: "Reset password success"
+    })
+  } catch (error) {
+    res.status(500).json({
+      messages: "Server error, reload"
+    })
+  }
+}
 module.exports = {
   register,
   login,
@@ -178,5 +276,8 @@ module.exports = {
   changeStatusOnline,
   update,
   getUserInfor,
-  changeAvatar
+  changeAvatar,
+  sendForgotPassword,
+  checkOtpPassword,
+  resetPasswordPost
 }

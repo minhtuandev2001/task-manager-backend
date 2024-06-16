@@ -19,5 +19,8 @@ router.patch("/change-avatar",
   userController.changeAvatar);
 
 router.get("/", userController.getUser);
+router.post("/forgot-password", userController.sendForgotPassword);
+router.post("/enter-otp", userController.checkOtpPassword);
+router.post("/reset-password", userController.resetPasswordPost);
 
 module.exports = router
