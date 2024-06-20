@@ -114,7 +114,7 @@ const create = async (req, res) => {
     })
   } catch (error) {
     res.status(500).json({
-      messages: "Create chat failed"
+      messages: "Create chat failed !"
     })
   }
 }
